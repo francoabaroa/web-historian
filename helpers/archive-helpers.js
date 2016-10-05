@@ -25,16 +25,62 @@ exports.initialize = function(pathsObj) {
 // The following function names are provided to you to suggest how you might
 // modularize your code. Keep it clean!
 
-exports.readListOfUrls = function() {
+var getSitesPath = function (basePath) {
+  if (basePath === undefined) {
+    basePath = 'test/testdata';
+  }
+  return basePath + '/sites.txt';
 };
 
-exports.isUrlInList = function() {
+exports.readListOfUrls = function(callback, basePath) {
+  var urls;
+  var ourPath = getSitesPath(basePath);
+  fs.readFile(ourPath, function(err, data) {
+    data = data.toString();
+    if (err) {
+      return;
+    }
+    urls = data.split('\n');
+    if (callback) {
+      callback(urls);
+    }
+  });
 };
 
-exports.addUrlToList = function() {
+exports.isUrlInList = function(url, callback, basePath) {
+  var exists;
+  exports.readListOfUrls(function(innerUrls) {
+    if (innerUrls.indexOf(url) > -1) {
+      exists = true;
+    } else {
+      exists = false;
+    }
+    callback(exists);
+  }, basePath);
 };
 
-exports.isUrlArchived = function() {
+exports.addUrlToList = function(url, callback, basePath) {
+  exports.isUrlInList(url, function(exists) {
+    var path = getSitesPath(basePath);
+    if (!exists) {
+      fs.appendFile(path, '\n' + url, callback);
+    }
+  });
+};
+
+var getArchivedPath = function(url, basePath) {
+  if (basePath === undefined) {
+    basePath = 'test/testdata';
+  }
+  basePath += '/sites/' + url;
+  return basePath;
+};
+
+exports.isUrlArchived = function(url, callback, basePath) {
+  var path = getArchivedPath(url, basePath);
+  fs.exists(path, function(exists) {
+    callback(exists);
+  });
 };
 
 exports.downloadUrls = function() {
