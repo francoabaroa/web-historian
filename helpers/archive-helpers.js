@@ -1,6 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var http = require('http');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -63,25 +64,51 @@ exports.addUrlToList = function(url, callback, basePath) {
   exports.isUrlInList(url, function(exists) {
     var path = getSitesPath(basePath);
     if (!exists) {
-      fs.appendFile(path, '\n' + url, callback);
+      fs.appendFile(path, url + '\n', callback);
     }
   });
 };
 
-var getArchivedPath = function(url, basePath) {
+exports.getArchivedPath = function(url, basePath) {
   if (basePath === undefined) {
     basePath = 'test/testdata';
   }
-  basePath += '/sites/' + url;
+  if (!url.startsWith('/')) {
+    url = '/' + url;
+  }
+  basePath += '/sites' + url;
   return basePath;
 };
 
 exports.isUrlArchived = function(url, callback, basePath) {
-  var path = getArchivedPath(url, basePath);
+  var path = exports.getArchivedPath(url, basePath);
   fs.exists(path, function(exists) {
     callback(exists);
   });
 };
 
-exports.downloadUrls = function() {
+var downloadUrl = function(url, basePath) {
+  var webUrl = url;
+  if (!url.startsWith('http')) {
+    webUrl = 'http://' + url;
+  }
+  http.get(webUrl, function(response) {
+    response.on('data', function(chunk) {
+      chunk = chunk.toString();
+      fs.writeFile(exports.getArchivedPath(url, basePath), chunk);
+    }).on('error', function(err) {
+      console.log('Error in download', err);
+    });
+  });
+};
+
+exports.downloadUrls = function(urls, basePath) {
+  _.each(urls, function(url) {
+    exports.isUrlArchived(url, function(exists) {
+      if (!exists) {
+        downloadUrl(url, basePath);
+      }
+    }, basePath);
+  });
+
 };
