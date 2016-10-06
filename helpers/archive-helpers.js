@@ -65,6 +65,8 @@ exports.addUrlToList = function(url, callback, basePath) {
     var path = getSitesPath(basePath);
     if (!exists) {
       fs.appendFile(path, url + '\n', callback);
+    } else {
+      callback();
     }
   });
 };
@@ -87,7 +89,7 @@ exports.isUrlArchived = function(url, callback, basePath) {
   });
 };
 
-var downloadUrl = function(url, basePath) {
+var downloadUrl = function(url, callback, basePath) {
   var webUrl = url;
   if (!url.startsWith('http')) {
     webUrl = 'http://' + url;
@@ -102,11 +104,11 @@ var downloadUrl = function(url, basePath) {
   });
 };
 
-exports.downloadUrls = function(urls, basePath) {
+exports.downloadUrls = function(urls, callback, basePath) {
   _.each(urls, function(url) {
     exports.isUrlArchived(url, function(exists) {
       if (!exists) {
-        downloadUrl(url, basePath);
+        downloadUrl(url, callback, basePath);
       }
     }, basePath);
   });

@@ -16,6 +16,7 @@ exports.handleRequest = function (req, res, basePath) {
     } else {
       ending = 'html';
     }
+    console.log('deliver', filePath, statusCode);
     fs.readFile(filePath, function(err, data) {
       if (err) {
         console.log('err on read', err);
@@ -45,24 +46,35 @@ exports.handleRequest = function (req, res, basePath) {
 
 
   var deliverPage = function(url) {
-    archive.addUrlToList(url, function() {
-      contentDelivery('web/public/loading.html', 302);
-    }, basePath);
-    /*
-    archive.isUrlArchived(url, function(exists) {
-      console.log('exists', exists);
+    // console.log('deliverPage', url);
+    // archive.addUrlToList(url, function() {
+    //   console.log('route to loading page');
+    //   contentDelivery('web/public/loading.html', 302);
+    // }, basePath);
+    archive.isUrlInList(url, function(exists) {
       if (!exists) {
         archive.addUrlToList(url, function() {
           contentDelivery('web/public/loading.html', 302);
         }, basePath);
+      } else {
+        archive.isUrlArchived(url, function(exists) {
+          if (exists) {
+            var path = archive.getArchivedPath(url, basePath);
+            contentDelivery(path);
+          } else {
+            archive.downloadUrls(url, basePath);
+          }
+        }, basePath);
+
       }
     }, basePath);
-    */
   };
 
   var onPost = function() {
+    console.log('post', req.url);
     req.on('data', function (chunk) {
       chunk = chunk.toString();
+      console.log('chunk', chunk);
       if (chunk.startsWith('url=')) {
         var url = chunk.split('=')[1].trim();
         deliverPage(url);
