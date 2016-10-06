@@ -5,6 +5,7 @@ var archive = require('../helpers/archive-helpers');
 var path = require('path');
 var supertest = require('supertest');
 var initialize = require('../web/initialize.js');
+var workers = require('../workers/htmlfetcher');
 
 initialize(path.join(__dirname, '/testdata'));
 
@@ -114,8 +115,8 @@ describe('archive helpers', function() {
       var urlArray = ['example1.com', 'example2.com\n'];
       fs.writeFileSync(archive.paths.list, urlArray.join('\n'));
 
-      archive.addUrlToList('someurl.com', function () {
-        archive.isUrlInList('someurl.com', function (exists) {
+      archive.addUrlToList('yahoo.com', function () {
+        archive.isUrlInList('yahoo.com', function (exists) {
           expect(exists).to.be.true;
           done();
         });
@@ -151,6 +152,27 @@ describe('archive helpers', function() {
       setTimeout(function () {
         expect(fs.readdirSync(archive.paths.archivedSites)).to.deep.equal(urlArray);
         done();
+      }, 500);
+    });
+  });
+
+  xdescribe('htmlFetcher', function () {
+    it('should download all pending urls in sites.txt', function (done) {
+      fs.rmdirSync(path.join(__dirname, '/testdata/sites'));
+
+      archive.initialize({
+        archivedSites: path.join(__dirname, '/testdata/sites'),
+        list: path.join(__dirname, '/testdata/sites.txt')
+      });
+
+      var urlArray = ['example1.com', 'example2.com', 'yahoo.com'];
+      workers.htmlFetcher();
+
+      // Ugly hack to wait for all downloads to finish.
+      setTimeout(function () {
+        expect(fs.readdirSync(archive.paths.archivedSites)).to.deep.equal(urlArray);
+        done();
+        fs.rmdirSync(path.join(__dirname, '/testdata/sites'));
       }, 500);
     });
   });

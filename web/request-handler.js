@@ -3,6 +3,8 @@ var archive = require('../helpers/archive-helpers');
 var fs = require('fs');
 // require more modules/folders here!
 
+
+
 exports.handleRequest = function (req, res, basePath) {
   //check for route and method
 
@@ -16,10 +18,8 @@ exports.handleRequest = function (req, res, basePath) {
     } else {
       ending = 'html';
     }
-    console.log('deliver', filePath, statusCode);
     fs.readFile(filePath, function(err, data) {
       if (err) {
-        console.log('err on read', err);
       } else {
         data = data.toString();
         res.writeHead(statusCode, {'Content-Type': 'text/' + ending, 'Content-Length': data.length});
@@ -61,8 +61,6 @@ exports.handleRequest = function (req, res, basePath) {
           if (exists) {
             var path = archive.getArchivedPath(url, basePath);
             contentDelivery(path);
-          } else {
-            archive.downloadUrls(url, basePath);
           }
         }, basePath);
 
@@ -71,10 +69,8 @@ exports.handleRequest = function (req, res, basePath) {
   };
 
   var onPost = function() {
-    console.log('post', req.url);
     req.on('data', function (chunk) {
       chunk = chunk.toString();
-      console.log('chunk', chunk);
       if (chunk.startsWith('url=')) {
         var url = chunk.split('=')[1].trim();
         deliverPage(url);

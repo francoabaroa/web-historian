@@ -28,7 +28,8 @@ exports.initialize = function(pathsObj) {
 
 var getSitesPath = function (basePath) {
   if (basePath === undefined) {
-    basePath = 'test/testdata';
+    //basePath = 'test/testdata';
+    basePath = 'archives';
   }
   return basePath + '/sites.txt';
 };
@@ -64,7 +65,7 @@ exports.addUrlToList = function(url, callback, basePath) {
   exports.isUrlInList(url, function(exists) {
     var path = getSitesPath(basePath);
     if (!exists) {
-      fs.appendFile(path, url + '\n', callback);
+      fs.appendFile(path, '\n' + url, callback);
     } else {
       callback();
     }
@@ -73,7 +74,8 @@ exports.addUrlToList = function(url, callback, basePath) {
 
 exports.getArchivedPath = function(url, basePath) {
   if (basePath === undefined) {
-    basePath = 'test/testdata';
+    //basePath = 'test/testdata';
+    basePath = 'archives';
   }
   if (!url.startsWith('/')) {
     url = '/' + url;
@@ -89,12 +91,14 @@ exports.isUrlArchived = function(url, callback, basePath) {
   });
 };
 
-var downloadUrl = function(url, callback, basePath) {
+exports.downloadUrl = function(url, basePath) {
+  console.log('download', url);
   var webUrl = url;
   if (!url.startsWith('http')) {
     webUrl = 'http://' + url;
   }
   http.get(webUrl, function(response) {
+    console.log('RESPONSE', webUrl);
     response.on('data', function(chunk) {
       chunk = chunk.toString();
       fs.writeFile(exports.getArchivedPath(url, basePath), chunk);
@@ -104,11 +108,11 @@ var downloadUrl = function(url, callback, basePath) {
   });
 };
 
-exports.downloadUrls = function(urls, callback, basePath) {
+exports.downloadUrls = function(urls, basePath) {
   _.each(urls, function(url) {
     exports.isUrlArchived(url, function(exists) {
       if (!exists) {
-        downloadUrl(url, callback, basePath);
+        exports.downloadUrl(url, basePath);
       }
     }, basePath);
   });
