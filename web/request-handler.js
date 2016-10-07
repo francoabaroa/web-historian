@@ -5,7 +5,7 @@ var fs = require('fs');
 
 
 
-exports.handleRequest = function (req, res, basePath) {
+exports.handleRequest = function (req, res) {
   //check for route and method
 
   var contentDelivery = function(filePath, statusCode) {
@@ -34,13 +34,13 @@ exports.handleRequest = function (req, res, basePath) {
     } else {
       archive.isUrlArchived(req.url, function(exists) {
         if (exists) {
-          var filePath = archive.getArchivedPath(req.url, basePath);
+          var filePath = archive.getArchivedPath(req.url);
           contentDelivery(filePath);
         } else {
           res.writeHead(404);
           res.end();
         }
-      }, basePath);
+      });
     }
   };
 
@@ -50,22 +50,22 @@ exports.handleRequest = function (req, res, basePath) {
     // archive.addUrlToList(url, function() {
     //   console.log('route to loading page');
     //   contentDelivery('web/public/loading.html', 302);
-    // }, basePath);
+    // });
     archive.isUrlInList(url, function(exists) {
       if (!exists) {
         archive.addUrlToList(url, function() {
           contentDelivery('web/public/loading.html', 302);
-        }, basePath);
+        });
       } else {
         archive.isUrlArchived(url, function(exists) {
           if (exists) {
-            var path = archive.getArchivedPath(url, basePath);
+            var path = archive.getArchivedPath(url);
             contentDelivery(path);
           }
-        }, basePath);
+        });
 
       }
-    }, basePath);
+    });
   };
 
   var onPost = function() {
