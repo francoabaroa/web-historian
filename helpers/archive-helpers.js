@@ -11,7 +11,8 @@ var Promise = require('bluebird');
  * customize it in any way you wish.
  */
 
-var basePath = 'test/testdata';
+//var basePath = 'test/testdata';
+var basePath = 'archives';
 
 exports.paths = {
   siteAssets: path.join(__dirname, '../web/public'),
@@ -93,28 +94,35 @@ exports.isUrlArchived = function(url) {
 };
 
 exports.downloadUrl = function(url) {
-  console.log('download', url);
   var webUrl = url;
   if (!url.startsWith('http')) {
     webUrl = 'http://' + url;
   }
-  http.get(webUrl, function(response) {
-    response.on('data', function(chunk) {
-      chunk = chunk.toString();
-      fs.writeFile(exports.getArchivedPath(url), chunk);
-    }).on('error', function(err) {
-      console.log('Error in download', err);
+  return new Promise(function (resolve, reject) {
+    http.get(webUrl, function (response) {
+      response.on('data', function (chunk) {
+        resolve(chunk.toString());
+      });
+    });
+  }).then(function (chunk) {
+    return new Promise(function (resolve, reject) {
+      fs.writeFile(exports.getArchivedPath(url), chunk, function () {
+        resolve();
+      });
     });
   });
 };
 
 exports.downloadUrls = function(urls) {
-  _.each(urls, function(url) {
-    exports.isUrlArchived(url, function(exists) {
+  var promiseArray = urls.map(function (url) {
+    return exports.isUrlArchived(url).then(function (exists) {
       if (!exists) {
-        exports.downloadUrl(url);
+        return exports.downloadUrl(url);
+      } else {
+        return null;
       }
     });
   });
 
+  return Promise.all(promiseArray);
 };

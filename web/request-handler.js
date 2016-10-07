@@ -1,6 +1,7 @@
 var path = require('path');
 var archive = require('../helpers/archive-helpers');
 var fs = require('fs');
+var Promise = require('bluebird');
 // require more modules/folders here!
 
 
@@ -9,6 +10,8 @@ exports.handleRequest = function (req, res) {
   //check for route and method
 
   var contentDelivery = function(filePath, statusCode) {
+
+
     if (statusCode === undefined) {
       statusCode = 200;
     }
@@ -18,13 +21,17 @@ exports.handleRequest = function (req, res) {
     } else {
       ending = 'html';
     }
-    fs.readFile(filePath, function(err, data) {
-      if (err) {
-      } else {
-        data = data.toString();
-        res.writeHead(statusCode, {'Content-Type': 'text/' + ending, 'Content-Length': data.length});
-        res.end(data);
-      }
+    return new Promise(function(resolve, reject) {
+      fs.readFile(filePath, function(err, data) {
+        if (err) {
+          reject(err);
+        } else {
+          data = data.toString();
+          res.writeHead(statusCode, {'Content-Type': 'text/' + ending, 'Content-Length': data.length});
+          res.end(data);
+          resolve();
+        }
+      });
     });
   };
 
@@ -32,7 +39,7 @@ exports.handleRequest = function (req, res) {
     if (req.url === '/') {
       contentDelivery('web/public/index.html');
     } else {
-      archive.isUrlArchived(req.url, function(exists) {
+      archive.isUrlArchived(req.url).then(function(exists) {
         if (exists) {
           var filePath = archive.getArchivedPath(req.url);
           contentDelivery(filePath);
@@ -44,26 +51,19 @@ exports.handleRequest = function (req, res) {
     }
   };
 
-
   var deliverPage = function(url) {
-    // console.log('deliverPage', url);
-    // archive.addUrlToList(url, function() {
-    //   console.log('route to loading page');
-    //   contentDelivery('web/public/loading.html', 302);
-    // });
-    archive.isUrlInList(url, function(exists) {
+    archive.isUrlInList(url).then(function(exists) {
       if (!exists) {
-        archive.addUrlToList(url, function() {
+        archive.addUrlToList(url).then(function() {
           contentDelivery('web/public/loading.html', 302);
         });
       } else {
-        archive.isUrlArchived(url, function(exists) {
+        archive.isUrlArchived(url).then(function(exists) {
           if (exists) {
             var path = archive.getArchivedPath(url);
             contentDelivery(path);
           }
         });
-
       }
     });
   };
@@ -79,16 +79,11 @@ exports.handleRequest = function (req, res) {
   };
 
 
+
   if (req.method === 'GET') {
     onGet();
   } else if (req.method === 'POST') {
     onPost();
   }
 
-  // req.on('end', function() {
-  //   if (req.method === 'GET') {
-  //     onGet();
-  //   } 
-  //   //res.end(archive.paths.list);
-  // }); 
 };

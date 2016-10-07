@@ -4,19 +4,23 @@ var archive = require('../helpers/archive-helpers');
 var _ = require('underscore');
 var fs = require('fs');
 
-//var basePath = 'archives';
 
-exports.htmlFetcher = function(basePath) {
-  archive.readListOfUrls(function(listOfUrls) {
-    _.each(listOfUrls, function(url) {
-      archive.isUrlArchived(url, function(exists) {
+exports.htmlFetcher = function() {
+  var promiseArray = archive.readListOfUrls().then(function(listOfUrls) {
+    return listOfUrls.map(function(url) {
+      console.log('url', url);
+      return archive.isUrlArchived(url).then(function(exists) {
         if (!exists) {
-          archive.downloadUrl(url, basePath);
-          fs.appendFile('download.log', '\nDownloaded ' + url);
+          return archive.downloadUrl(url).then(function () {
+            fs.appendFile('download.log', '\nDownloaded ' + url);
+          });
+        } else {
+          return null;
         }
-      }, basePath);
+      });
     });
-  }, basePath);
+  });
+  return Promise.all(promiseArray);
 };
 
 

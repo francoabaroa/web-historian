@@ -16,7 +16,7 @@ archive.initialize({
 
 var request = supertest.agent(server);
 
-xdescribe('server', function() {
+describe('server', function() {
   describe('GET /', function () {
     it('should return the content of index.html', function (done) {
       // just assume that if it contains an <input> tag its index.html
@@ -67,7 +67,7 @@ xdescribe('server', function() {
           .expect(302, function (err) {
             if (!err) {
               var fileContents = fs.readFileSync(archive.paths.list, 'utf8');
-              expect(fileContents).to.equal(url + '\n');
+              expect(fileContents).to.equal('\n' + url);
             }
 
             done(err);
@@ -146,13 +146,10 @@ describe('archive helpers', function() {
   describe('#downloadUrls', function () {
     it('should download all pending urls in the list', function (done) {
       var urlArray = ['www.example.com', 'www.google.com'];
-      archive.downloadUrls(urlArray);
-
-      // Ugly hack to wait for all downloads to finish.
-      setTimeout(function () {
+      archive.downloadUrls(urlArray).then(function () {
         expect(fs.readdirSync(archive.paths.archivedSites)).to.deep.equal(urlArray);
         done();
-      }, 500);
+      });
     });
   });
 
@@ -166,14 +163,11 @@ describe('archive helpers', function() {
       });
 
       var urlArray = ['example1.com', 'example2.com', 'yahoo.com'];
-      workers.htmlFetcher();
-
-      // Ugly hack to wait for all downloads to finish.
-      setTimeout(function () {
+      workers.htmlFetcher().then(function () {
         expect(fs.readdirSync(archive.paths.archivedSites)).to.deep.equal(urlArray);
         done();
-        fs.rmdirSync(path.join(__dirname, '/testdata/sites'));
-      }, 500);
+        //fs.rmdirSync(path.join(__dirname, '/testdata/sites'));
+      });
     });
   });
 });
